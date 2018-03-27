@@ -13,10 +13,10 @@ It's similar to, and borrows from, components in other VPNs such as Lantern and 
 ### Requirements
 
 * A Windows system (these instructions were tested on Windows 10).
-* https://mingw-w64.org/
+* Cygwin (32 bit), with the `mingw64-i686-gcc-core` package.
 
 ### Steps
 
-* Open a Mingw-w64 terminal.
+* Open a Cygwin terminal.
 * `cd` to `tools/setsystemproxy`, inside your clone of this repo.
-* `mingw32-make`
+* `i686-w64-mingw32-gcc -Wall setsystemproxy.c -o setsystemproxy.exe -lwininet`
