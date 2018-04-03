@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import {SentryClient} from '@sentry/electron';
-import {app, BrowserWindow, dialog, ipcMain, Menu, shell} from 'electron';
+import {app, BrowserWindow, dialog, ipcMain, Menu, protocol, shell} from 'electron';
 import {PromiseIpc} from 'electron-promise-ipc';
 import {autoUpdater} from 'electron-updater';
 import * as path from 'path';
@@ -21,6 +21,8 @@ import * as process from 'process';
 import * as url from 'url';
 
 import * as process_manager from './process_manager';
+
+protocol.registerStandardSchemes(['outline']);
 
 // TODO: Figure out the TypeScript magic to use the default, export-ed instance.
 const myPromiseIpc = new PromiseIpc();
@@ -41,8 +43,7 @@ function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({width: 360, height: 640, resizable: false, icon: iconPath});
 
-  const pathToIndexHtml = path.join(__dirname, '..', 'www', 'electron_index.html');
-  const webAppUrl = new url.URL(`file://${pathToIndexHtml}`);
+  const webAppUrl = new url.URL(`outline://unused/electron_index.html`);
 
   // Debug mode, etc.
   const queryParams = new url.URLSearchParams();
@@ -67,6 +68,12 @@ function createWindow() {
   // TODO: is this the most appropriate event?
   mainWindow.webContents.on('did-finish-load', () => {
     interceptShadowsocksLink(process.argv);
+  });
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    if (mainWindow) {
+      mainWindow.webContents.send('module-path', path.join(__dirname, '..', 'www'));
+    }
   });
 
   // The client is a single page app - loading any other page means the
@@ -130,6 +137,20 @@ app.on('ready', () => {
   if (process.argv.includes(Options.AUTOSTART)) {
     app.quit();  // Quitting the app will reset the system proxy configuration before exiting.
   } else {
+    // Register a custom protocol for more anonymous sentry reports.
+    protocol.registerFileProtocol(
+        'outline',
+        (request, callback) => {
+          const appPath = new url.URL(request.url).pathname;
+          const filesystemPath = path.join(__dirname, '..', 'www', appPath);
+          callback(filesystemPath);
+        },
+        (error) => {
+          if (error) {
+            throw new Error('Failed to register outline protocol');
+          }
+        });
+
     createWindow();
   }
 });

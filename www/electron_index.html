@@ -24,7 +24,11 @@
   <script src="bower_components/webcomponentsjs/webcomponents-loader.js"></script>
   <link rel="import" href="ui_components/app-root.html">
   <script>
-    require('./app/electron_main.js');
+    const electron = require('electron');
+    electron.ipcRenderer.on('module-path', (e, url) => {
+      module.paths.push(url);
+      require('app/electron_main.js');
+    });
   </script>
 </head>
 <body unresolved>

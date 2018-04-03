@@ -67,11 +67,10 @@ function createServerRepo(
 }
 
 export function main(platform: OutlinePlatform) {
-  return Promise.all([onceEnvVars, oncePolymerIsReady])
+  // TODO: huh? not firing???
+  Promise.all([onceEnvVars])
       .then(
           ([environmentVars]) => {
-            console.debug('running main() function');
-
             const queryParams = url.parse(document.URL, true).query;
             const debugMode = queryParams.debug === 'true';
 

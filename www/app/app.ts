@@ -267,19 +267,7 @@ export class App {
   }
 
   private connectServer(event: CustomEvent) {
-    const [server, card] = this.getServerAndCardByServerId(event.detail.serverId);
-    card.state = 'CONNECTING';
-    return server.connect().then(
-        () => {
-          card.state = 'CONNECTED';
-          this.rootEl.showToast(this.localize('server-connected', 'serverName', server.name));
-          this.maybeShowNonSystemWarning();
-        },
-        (err: errors.OutlinePluginError) => {
-          console.error(`Failed to connect to server with plugin error: ${err.name}`);
-          card.state = 'DISCONNECTED';
-          this.showLocalizedError(err);
-        });
+    throw new Error('you cannot connect right now');
   }
 
   private maybeShowNonSystemWarning() {

@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {SentryClient} from '@sentry/electron';
 import {clipboard, ipcRenderer} from 'electron';
 import * as os from 'os';
+import * as Raven from 'raven-js';
 
 import {EventQueue} from '../model/events';
 
 import {AbstractClipboard, Clipboard, ClipboardListener} from './clipboard';
 import {EnvironmentVariables} from './environment';
 import {OutlineErrorReporter} from './error_reporter';
+import {FakeOutlineConnection} from './fake_connection';
 import {main} from './main';
 import {OutlineServer} from './outline_server';
 import {OutlinePlatform} from './platform';
@@ -57,14 +58,35 @@ class ElectronUpdater extends AbstractUpdater {
 
 class ElectronErrorReporter implements OutlineErrorReporter {
   constructor(appVersion: string, privateDsn: string) {
-    SentryClient.create({dsn: privateDsn, release: appVersion});
+    Raven
+        .config(privateDsn, {
+          release: appVersion,
+          // https://docs.sentry.io/clients/javascript/config/
+          autoBreadcrumbs: {'console': false, 'location': true},
+          // breadcrumbCallback: (b) => {
+          //   console.log('breadcrumbCallback', b);
+          //   return b;
+          // },
+          // dataCallback: (d) => {
+          //   console.log('dataCallback', d);
+          //   return d;
+          // },
+          // shouldSendCallback: (d) => {
+          //   console.log('shouldSendCallback', d);
+          //   return true;
+          // }
+        })
+        .install();
   }
 
   report(userFeedback: string, feedbackCategory: string, userEmail?: string): Promise<void> {
-    return SentryClient.captureEvent(
-        {message: userFeedback, user: {email: userEmail}, tags: {category: feedbackCategory}});
+    // return SentryClient.captureEvent(
+    //     {message: userFeedback, user: {email: userEmail}, tags: {category: feedbackCategory}});
+    return Promise.reject(new Error('yo'));
   }
 }
+
+console.log('A');
 
 main({
   hasDeviceSupport: () => {
@@ -74,7 +96,7 @@ main({
     return (serverId: string, config: cordova.plugins.outline.ServerConfig,
             eventQueue: EventQueue) => {
       return new OutlineServer(
-          serverId, config, new WindowsOutlineConnection(config, serverId), eventQueue);
+          serverId, config, new FakeOutlineConnection(config, serverId), eventQueue);
     };
   },
   getUrlInterceptor: () => {
